@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	dsn := "root:mysqlPW@tcp(127.0.0.1:3306)/db?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:mysqlPW@tcp(db:3306)/db?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
