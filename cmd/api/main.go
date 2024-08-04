@@ -5,6 +5,7 @@ import (
 
 	"github.com/DavidEsdrs/go-mercado/internal/config"
 	"github.com/DavidEsdrs/go-mercado/internal/handler"
+	"github.com/DavidEsdrs/go-mercado/internal/middleware"
 	"github.com/DavidEsdrs/go-mercado/internal/model"
 	"github.com/DavidEsdrs/go-mercado/internal/repository"
 	service "github.com/DavidEsdrs/go-mercado/internal/services"
@@ -12,6 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+
+	gorm_logger "gorm.io/gorm/logger"
 )
 
 func setupDatabase(log *logger.Logger) (*gorm.DB, error) {
@@ -19,7 +22,12 @@ func setupDatabase(log *logger.Logger) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db, err := gorm.Open(mysql.Open(cfg.DatabaseURL), &gorm.Config{})
+
+	silentLogger := gorm_logger.New(nil, gorm_logger.Config{})
+
+	db, err := gorm.Open(mysql.Open(cfg.DatabaseURL), &gorm.Config{
+		Logger: silentLogger,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +65,7 @@ func main() {
 	r := gin.New()
 
 	r.Use(gin.Recovery())
+	r.Use(middleware.TimeLogging(log))
 
 	r.GET("/health", func(ctx *gin.Context) {
 		ctx.JSON(200, gin.H{
