@@ -8,16 +8,12 @@ services:
       - '3333:3306'
     volumes:
       - mysql-volume:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./scripts/database/init.sql:/docker-entrypoint-initdb.d/init.sql
   app:
     build: .
     restart: always
     environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_USER: root
-      DB_PASSWORD: mysqlPW
-      DB_NAME: db
+      DATABASE_URL: root:mysqlPW@tcp(db:3306)/db?charset=utf8mb4&parseTime=True&loc=Local
     ports:
       - "8080:8080"
     depends_on:

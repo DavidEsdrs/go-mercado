@@ -19,7 +19,6 @@ func setupDatabase() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	db, err := gorm.Open(mysql.Open(cfg.DatabaseURL), &gorm.Config{})
 	if err != nil {
 		return nil, err
