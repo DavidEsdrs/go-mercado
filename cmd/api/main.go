@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/DavidEsdrs/go-mercado/internal/config"
 	"github.com/DavidEsdrs/go-mercado/internal/handler"
 	"github.com/DavidEsdrs/go-mercado/internal/model"
 	"github.com/DavidEsdrs/go-mercado/internal/repository"
@@ -14,8 +15,12 @@ import (
 )
 
 func setupDatabase() (*gorm.DB, error) {
-	dsn := "root:mysqlPW@tcp(db:3333)/db?charset=utf8mb4&parseTime=True&loc=Local"
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	cfg, err := config.Load()
+	if err != nil {
+		return nil, err
+	}
+
+	db, err := gorm.Open(mysql.Open(cfg.DatabaseURL), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
