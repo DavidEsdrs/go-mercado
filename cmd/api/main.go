@@ -33,6 +33,7 @@ func setupDatabase(log *logger.Logger) (*gorm.DB, error) {
 	}
 
 	err = db.AutoMigrate(
+		&model.User{},
 		&model.Product{},
 		&model.Cart{},
 		&model.ProductCart{},
@@ -56,11 +57,8 @@ func main() {
 		log.Fatal("error while starting database: %v", err.Error())
 	}
 
-	repoService := repository.NewProductRepository(db)
-
-	productService := service.NewProductService(repoService)
-
-	productHandler := handler.NewProductHandler(productService)
+	productHandler := CreateProductHandler(db)
+	userHandler := CreateUserHandler(db)
 
 	r := gin.New()
 
@@ -73,9 +71,23 @@ func main() {
 		})
 	})
 
+	r.POST("/login", userHandler.Login)
+
 	r.POST("/product", productHandler.CreateProduct)
 	r.GET("/product/:id", productHandler.ReadProduct)
 	r.GET("/product", productHandler.ReadProducts)
 
 	log.Fatal("%v", r.Run(":8080"))
+}
+
+func CreateProductHandler(db *gorm.DB) *handler.ProductHandler {
+	repoService := repository.NewProductRepository(db)
+	productService := service.NewProductService(repoService)
+	return handler.NewProductHandler(productService)
+}
+
+func CreateUserHandler(db *gorm.DB) *handler.UserHandler {
+	repoService := repository.NewUserRepository(db)
+	userService := service.NewUserService(repoService)
+	return handler.NewUserHandler(userService)
 }
