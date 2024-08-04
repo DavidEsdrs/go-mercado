@@ -1,20 +1,20 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"os"
 
 	"github.com/DavidEsdrs/go-mercado/internal/config"
 	"github.com/DavidEsdrs/go-mercado/internal/handler"
 	"github.com/DavidEsdrs/go-mercado/internal/model"
 	"github.com/DavidEsdrs/go-mercado/internal/repository"
 	service "github.com/DavidEsdrs/go-mercado/internal/services"
+	"github.com/DavidEsdrs/go-mercado/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
-func setupDatabase() (*gorm.DB, error) {
+func setupDatabase(log *logger.Logger) (*gorm.DB, error) {
 	cfg, err := config.Load()
 	if err != nil {
 		return nil, err
@@ -35,14 +35,17 @@ func setupDatabase() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	fmt.Println("Auto-migration completed successfully.")
+	log.Info("Auto-migration completed successfully.")
 	return db, nil
 }
 
 func main() {
-	db, err := setupDatabase()
+	log := logger.New(os.Stdout, "APP", logger.LstdFlags|logger.Lshortfile)
+	log.SetLevel(logger.INFO)
+
+	db, err := setupDatabase(log)
 	if err != nil {
-		log.Fatal("error while starting database: ", err.Error())
+		log.Fatal("error while starting database: %v", err.Error())
 	}
 
 	repoService := repository.NewProductRepository(db)
@@ -61,5 +64,5 @@ func main() {
 
 	r.POST("/product", productHandler.CreateProduct)
 
-	r.Run(":8080")
+	log.Fatal("%v", r.Run(":8080"))
 }
