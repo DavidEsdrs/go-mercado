@@ -11,21 +11,20 @@ import (
 	service "github.com/DavidEsdrs/go-mercado/internal/services"
 	"github.com/DavidEsdrs/go-mercado/pkg/logger"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
 	gorm_logger "gorm.io/gorm/logger"
 )
 
-var log *logger.Logger
-
 func main() {
-	log = logger.New(os.Stdout, "APP", logger.LstdFlags|logger.Ltime)
-	log.SetLevel(logger.INFO)
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
 
-	db, err := setupDatabase(log)
+	db, err := setupDatabase(logger)
 	if err != nil {
-		log.Fatal("error while starting database: %v", err.Error())
+		logger.Fatal("error while starting database: " + err.Error())
 	}
 
 	productHandler := CreateProductHandler(db)
@@ -34,7 +33,7 @@ func main() {
 	r := gin.New()
 
 	r.Use(gin.Recovery())
-	r.Use(middleware.TimeLogging(log))
+	r.Use(middleware.TimeLogging(logger))
 
 	r.GET("/health", func(ctx *gin.Context) {
 		ctx.JSON(200, gin.H{
@@ -49,10 +48,10 @@ func main() {
 	r.GET("/product/:id", productHandler.ReadProduct)
 	r.GET("/product", productHandler.ReadProducts)
 
-	log.Fatal("%v", r.Run(":8080"))
+	r.Run(":8080")
 }
 
-func setupDatabase(log *logger.Logger) (*gorm.DB, error) {
+func setupDatabase(log *zap.Logger) (*gorm.DB, error) {
 	cfg, err := config.Load()
 	if err != nil {
 		return nil, err
