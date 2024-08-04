@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/DavidEsdrs/go-mercado/internal/model"
 	service "github.com/DavidEsdrs/go-mercado/internal/services"
@@ -28,6 +29,28 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 
 	if err := h.service.InsertProduct(&product); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create task"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, product)
+}
+
+func (h *ProductHandler) ReadProduct(c *gin.Context) {
+	idAsString := c.Param("id")
+	id, err := strconv.ParseUint(idAsString, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "given param is invalid",
+		})
+		return
+	}
+
+	product, err := h.service.ReadProduct(uint(id))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":          "Unable to create product",
+			"internal_error": err.Error(),
+		})
 		return
 	}
 

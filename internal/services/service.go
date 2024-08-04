@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 
-	models "github.com/DavidEsdrs/go-mercado/internal/model"
+	"github.com/DavidEsdrs/go-mercado/internal/model"
 )
 
 type Repository[T any] interface {
@@ -14,19 +14,26 @@ type Repository[T any] interface {
 }
 
 type ProductService struct {
-	productRepository Repository[models.Product]
+	productRepository Repository[model.Product]
 }
 
-func NewProductService(repo Repository[models.Product]) *ProductService {
+func NewProductService(repo Repository[model.Product]) *ProductService {
 	return &ProductService{
 		productRepository: repo,
 	}
 }
 
-func (pc *ProductService) InsertProduct(p *models.Product) error {
+func (pc *ProductService) InsertProduct(p *model.Product) error {
 	if !p.IsValid() {
 		return fmt.Errorf("invalid product given")
 	}
 	pc.productRepository.Insert(p)
 	return nil
+}
+
+func (pc *ProductService) ReadProduct(id uint) (product model.Product, err error) {
+	if product, err = pc.productRepository.Read(id); err != nil {
+		return product, fmt.Errorf("no entity found for id %v - error: %w", id, err)
+	}
+	return product, nil
 }

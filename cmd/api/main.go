@@ -54,15 +54,18 @@ func main() {
 
 	productHandler := handler.NewProductHandler(productService)
 
-	r := gin.Default()
+	r := gin.New()
+
+	r.Use(gin.Recovery())
 
 	r.GET("/health", func(ctx *gin.Context) {
-		ctx.JSON(200, map[string]interface{}{
+		ctx.JSON(200, gin.H{
 			"success": true,
 		})
 	})
 
 	r.POST("/product", productHandler.CreateProduct)
+	r.GET("/product/:id", productHandler.ReadProduct)
 
 	log.Fatal("%v", r.Run(":8080"))
 }
