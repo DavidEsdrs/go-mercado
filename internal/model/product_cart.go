@@ -1,4 +1,4 @@
-package models
+package model
 
 type ProductCart struct {
 	CartID    uint    `gorm:"primaryKey"`

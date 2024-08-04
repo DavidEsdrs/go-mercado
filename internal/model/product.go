@@ -1,4 +1,4 @@
-package models
+package model
 
 import (
 	"gorm.io/gorm"
@@ -20,4 +20,8 @@ type Product struct {
 	Stock       int32     `gorm:"not null" json:"stock"`
 	Type        PriceType `gorm:"type:enum('kg', 'unit');not null" json:"type"`
 	VendorID    int       `gorm:"not null" json:"vendor_id"`
+}
+
+func (p *Product) IsValid() bool {
+	return p.ID != 0 && len(p.Name) < 50 && p.Value > 0
 }
