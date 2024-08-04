@@ -34,3 +34,8 @@ func (pr *ProductRepository) Update(product *model.Product) error {
 func (pr *ProductRepository) Delete(id uint) error {
 	return pr.db.Delete(&model.Product{}, id).Error // deletes by id
 }
+
+func (pr *ProductRepository) FindAll() (products []model.Product, err error) {
+	tx := pr.db.Find(&products)
+	return products, tx.Error
+}

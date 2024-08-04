@@ -48,7 +48,7 @@ func setupDatabase(log *logger.Logger) (*gorm.DB, error) {
 }
 
 func main() {
-	log := logger.New(os.Stdout, "APP", logger.LstdFlags|logger.Lshortfile)
+	log := logger.New(os.Stdout, "APP", logger.LstdFlags|logger.Ltime)
 	log.SetLevel(logger.INFO)
 
 	db, err := setupDatabase(log)
@@ -75,6 +75,7 @@ func main() {
 
 	r.POST("/product", productHandler.CreateProduct)
 	r.GET("/product/:id", productHandler.ReadProduct)
+	r.GET("/product", productHandler.ReadProducts)
 
 	log.Fatal("%v", r.Run(":8080"))
 }

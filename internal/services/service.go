@@ -11,6 +11,7 @@ type Repository[T any] interface {
 	Read(id uint) (T, error)
 	Update(*T) error
 	Delete(id uint) error
+	FindAll() ([]T, error)
 }
 
 type ProductService struct {
@@ -36,4 +37,8 @@ func (pc *ProductService) ReadProduct(id uint) (product model.Product, err error
 		return product, fmt.Errorf("no entity found for id %v - error: %w", id, err)
 	}
 	return product, nil
+}
+
+func (pc *ProductService) ReadProducts() (products []model.Product, err error) {
+	return pc.productRepository.FindAll()
 }

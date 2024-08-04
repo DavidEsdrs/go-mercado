@@ -56,3 +56,16 @@ func (h *ProductHandler) ReadProduct(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, product)
 }
+
+func (h *ProductHandler) ReadProducts(c *gin.Context) {
+	products, err := h.service.ReadProducts()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":          "Unable to read products",
+			"internal_error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, products)
+}
