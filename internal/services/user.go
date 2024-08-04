@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -41,4 +42,27 @@ func (u *UserService) Login(email, password string) (string, error) {
 	})
 
 	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+}
+
+func (u *UserService) Signup(username, email, password string) (model.User, error) {
+	var user model.User
+
+	if user, err := u.userRepository.FindUserByEmail(email); user.ID != 0 || err != nil {
+		return user, fmt.Errorf("user already exists")
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if err != nil {
+		return user, fmt.Errorf("unable to hash password")
+	}
+
+	user.Username = username
+	user.Email = email
+	user.HashPassword = string(hash)
+
+	if err := u.userRepository.Insert(&user); err != nil {
+		return user, err
+	}
+
+	return user, nil
 }

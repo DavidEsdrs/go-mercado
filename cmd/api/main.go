@@ -17,6 +17,41 @@ import (
 	gorm_logger "gorm.io/gorm/logger"
 )
 
+var log *logger.Logger
+
+func main() {
+	log = logger.New(os.Stdout, "APP", logger.LstdFlags|logger.Ltime)
+	log.SetLevel(logger.INFO)
+
+	db, err := setupDatabase(log)
+	if err != nil {
+		log.Fatal("error while starting database: %v", err.Error())
+	}
+
+	productHandler := CreateProductHandler(db)
+	userHandler := CreateUserHandler(db)
+
+	r := gin.New()
+
+	r.Use(gin.Recovery())
+	r.Use(middleware.TimeLogging(log))
+
+	r.GET("/health", func(ctx *gin.Context) {
+		ctx.JSON(200, gin.H{
+			"success": true,
+		})
+	})
+
+	r.POST("/login", userHandler.Login)
+	r.POST("/signup", userHandler.Signup)
+
+	r.POST("/product", productHandler.CreateProduct)
+	r.GET("/product/:id", productHandler.ReadProduct)
+	r.GET("/product", productHandler.ReadProducts)
+
+	log.Fatal("%v", r.Run(":8080"))
+}
+
 func setupDatabase(log *logger.Logger) (*gorm.DB, error) {
 	cfg, err := config.Load()
 	if err != nil {
@@ -48,38 +83,6 @@ func setupDatabase(log *logger.Logger) (*gorm.DB, error) {
 	return db, nil
 }
 
-func main() {
-	log := logger.New(os.Stdout, "APP", logger.LstdFlags|logger.Ltime)
-	log.SetLevel(logger.INFO)
-
-	db, err := setupDatabase(log)
-	if err != nil {
-		log.Fatal("error while starting database: %v", err.Error())
-	}
-
-	productHandler := CreateProductHandler(db)
-	userHandler := CreateUserHandler(db)
-
-	r := gin.New()
-
-	r.Use(gin.Recovery())
-	r.Use(middleware.TimeLogging(log))
-
-	r.GET("/health", func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{
-			"success": true,
-		})
-	})
-
-	r.POST("/login", userHandler.Login)
-
-	r.POST("/product", productHandler.CreateProduct)
-	r.GET("/product/:id", productHandler.ReadProduct)
-	r.GET("/product", productHandler.ReadProducts)
-
-	log.Fatal("%v", r.Run(":8080"))
-}
-
 func CreateProductHandler(db *gorm.DB) *handler.ProductHandler {
 	repoService := repository.NewProductRepository(db)
 	productService := service.NewProductService(repoService)
@@ -87,7 +90,14 @@ func CreateProductHandler(db *gorm.DB) *handler.ProductHandler {
 }
 
 func CreateUserHandler(db *gorm.DB) *handler.UserHandler {
+	var userLogger *logger.Logger
+	userLogs, err := os.OpenFile("user-logs.txt", os.O_CREATE|os.O_APPEND, 0600)
+	if err != nil {
+		panic("unable to create users log file!")
+	}
+	userLogger = logger.New(userLogs, "USER", logger.LstdFlags|logger.Ltime)
+
 	repoService := repository.NewUserRepository(db)
 	userService := service.NewUserService(repoService)
-	return handler.NewUserHandler(userService)
+	return handler.NewUserHandler(userService, userLogger)
 }
