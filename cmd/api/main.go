@@ -90,7 +90,7 @@ func CreateProductHandler(db *gorm.DB) *handler.ProductHandler {
 
 func CreateUserHandler(db *gorm.DB) *handler.UserHandler {
 	var userLogger *logger.Logger
-	userLogs, err := os.OpenFile("user-logs.txt", os.O_CREATE|os.O_APPEND, 0600)
+	userLogs, err := os.OpenFile("app.log", os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		panic("unable to create users log file!")
 	}

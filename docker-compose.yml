@@ -10,7 +10,8 @@ services:
       - mysql-volume:/var/lib/mysql
       - ./scripts/database/init.sql:/docker-entrypoint-initdb.d/init.sql
   app:
-    build: .
+    build:
+      dockerfile: Dockerfile
     restart: always
     environment:
       DATABASE_URL: root:mysqlPW@tcp(db:3306)/db?charset=utf8mb4&parseTime=True&loc=Local
@@ -18,39 +19,48 @@ services:
       - "8080:8080"
     depends_on:
       - db
+    volumes:
+      - ./app.log:/app/app.log
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
-    container_name: elasticsearch
+  opensearch:
+    image: opensearchproject/opensearch:2.4.0
+    container_name: opensearch
     environment:
       - discovery.type=single-node
+      - plugins.security.disabled=true
     ports:
       - "9200:9200"
     networks:
-      - elk
+      - opensearch_net
 
-  logstash:
-    image: docker.elastic.co/logstash/logstash:7.17.1
-    container_name: logstash
+  fluentd:
+    build:
+      dockerfile: Dockerfile.fluentd
+    container_name: fluentd
     volumes:
-      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./fluentd.conf:/fluentd/etc/fluent.conf
+      - ./app.log:/fluentd/log/app.log  # Monta o diretório de logs do host no contêiner
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
     depends_on:
-      - elasticsearch
+      - opensearch
     networks:
-      - elk
+      - opensearch_net
 
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.17.1
-    container_name: kibana
+  dashboard:
+    image: opensearchproject/opensearch-dashboards:2.4.0
     ports:
       - "5601:5601"
+    environment:
+      OPENSEARCH_HOSTS: "http://opensearch:9200"
     depends_on:
-      - elasticsearch
+      - opensearch
     networks:
-      - elk
+      - opensearch_net
 
 volumes:
   mysql-volume:
 networks:
-  elk:
+  opensearch_net:
     driver: bridge
