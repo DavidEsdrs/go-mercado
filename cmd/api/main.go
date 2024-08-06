@@ -9,9 +9,9 @@ import (
 	"github.com/DavidEsdrs/go-mercado/internal/model"
 	"github.com/DavidEsdrs/go-mercado/internal/repository"
 	service "github.com/DavidEsdrs/go-mercado/internal/services"
-	"github.com/DavidEsdrs/go-mercado/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	logger, _ := zap.NewProduction()
+	logger := setupAppLogger("app.log")
 	defer logger.Sync()
 
 	db, err := setupDatabase(logger)
@@ -28,7 +28,7 @@ func main() {
 	}
 
 	productHandler := CreateProductHandler(db)
-	userHandler := CreateUserHandler(db)
+	userHandler := CreateUserHandler(db, logger)
 
 	r := gin.New()
 
@@ -88,15 +88,25 @@ func CreateProductHandler(db *gorm.DB) *handler.ProductHandler {
 	return handler.NewProductHandler(productService)
 }
 
-func CreateUserHandler(db *gorm.DB) *handler.UserHandler {
-	var userLogger *logger.Logger
-	userLogs, err := os.OpenFile("app.log", os.O_CREATE|os.O_APPEND, 0600)
-	if err != nil {
-		panic("unable to create users log file!")
-	}
-	userLogger = logger.New(userLogs, "USER", logger.LstdFlags|logger.Ltime)
-
+func CreateUserHandler(db *gorm.DB, logger *zap.Logger) *handler.UserHandler {
 	repoService := repository.NewUserRepository(db)
 	userService := service.NewUserService(repoService)
-	return handler.NewUserHandler(userService, userLogger)
+	return handler.NewUserHandler(userService, logger)
+}
+
+func setupAppLogger(logFileName string) *zap.Logger {
+	userLogs, err := os.OpenFile(logFileName, os.O_CREATE|os.O_APPEND, 0600)
+	if err != nil {
+		panic("unable to create users log file! error: " + err.Error())
+	}
+
+	writeSyncer := zapcore.AddSync(userLogs)
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.TimeKey = "timestamp"
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	fileEncoder := zapcore.NewJSONEncoder(encoderConfig)
+
+	core := zapcore.NewCore(fileEncoder, writeSyncer, zapcore.InfoLevel)
+
+	return zap.New(core)
 }

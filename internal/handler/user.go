@@ -4,16 +4,16 @@ import (
 	"net/http"
 
 	service "github.com/DavidEsdrs/go-mercado/internal/services"
-	"github.com/DavidEsdrs/go-mercado/pkg/logger"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type UserHandler struct {
-	log     *logger.Logger
+	log     *zap.Logger
 	service *service.UserService
 }
 
-func NewUserHandler(service *service.UserService, log *logger.Logger) *UserHandler {
+func NewUserHandler(service *service.UserService, log *zap.Logger) *UserHandler {
 	return &UserHandler{
 		service: service,
 		log:     log,
@@ -43,6 +43,8 @@ func (uh *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
+	uh.log.Info("user logged in", zap.String("email", body.Email))
+
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("Authorization", tokenString, 3600*24*2, "", "", false, true)
 	c.Status(http.StatusOK)
@@ -65,7 +67,10 @@ func (uh *UserHandler) Signup(c *gin.Context) {
 
 	user, err := uh.service.Signup(body.Username, body.Email, body.Password)
 	if err != nil {
-		uh.log.Info("status 400 - bad request: %v", err.Error())
+		uh.log.Info("fail",
+			zap.String("internal_error", err.Error()),
+			zap.Int("status", http.StatusBadRequest),
+		)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
