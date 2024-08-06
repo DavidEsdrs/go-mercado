@@ -27,7 +27,7 @@ services:
     container_name: opensearch
     environment:
       - discovery.type=single-node
-      - plugins.security.disabled=true
+      - "DISABLE_SECURITY_PLUGIN=true"
     ports:
       - "9200:9200"
     networks:
@@ -53,7 +53,8 @@ services:
     ports:
       - "5601:5601"
     environment:
-      OPENSEARCH_HOSTS: "http://opensearch:9200"
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
     depends_on:
       - opensearch
     networks:
@@ -63,4 +64,3 @@ volumes:
   mysql-volume:
 networks:
   opensearch_net:
-    driver: bridge
