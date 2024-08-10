@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path"
 
 	"github.com/DavidEsdrs/go-mercado/internal/config"
 	"github.com/DavidEsdrs/go-mercado/internal/handler"
@@ -95,7 +96,11 @@ func CreateUserHandler(db *gorm.DB, logger *zap.Logger) *handler.UserHandler {
 }
 
 func setupAppLogger(logFileName string) *zap.Logger {
-	userLogs, err := os.OpenFile(logFileName, os.O_CREATE|os.O_APPEND, 0600)
+	err := os.MkdirAll("logs", os.ModePerm)
+	if err != nil {
+		panic("unable to create logs folder" + err.Error())
+	}
+	userLogs, err := os.OpenFile(path.Join("logs", logFileName), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic("unable to create users log file! error: " + err.Error())
 	}
