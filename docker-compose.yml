@@ -20,7 +20,7 @@ services:
     depends_on:
       - db
     volumes:
-      - ./app.log:/app/app.log
+      - app_logs:/root/logs/
 
   opensearch:
     image: opensearchproject/opensearch:2.4.0
@@ -28,6 +28,13 @@ services:
     environment:
       - discovery.type=single-node
       - "DISABLE_SECURITY_PLUGIN=true"
+
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch
+      - discovery.seed_hosts=opensearch
+
+      - network.host=0.0.0.0
+      - http.port=9200
     ports:
       - "9200:9200"
     networks:
@@ -39,7 +46,7 @@ services:
     container_name: fluentd
     volumes:
       - ./fluentd.conf:/fluentd/etc/fluent.conf
-      - ./app.log:/fluentd/log/app.log  # Monta o diretório de logs do host no contêiner
+      - app_logs:/fluentd/log/  # Monta o diretório de logs do host no contêiner
     ports:
       - "24224:24224"
       - "24224:24224/udp"
@@ -62,5 +69,6 @@ services:
 
 volumes:
   mysql-volume:
+  app_logs:
 networks:
   opensearch_net:
